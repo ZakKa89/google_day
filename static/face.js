@@ -7,6 +7,13 @@ const lineWidth = 2;
 
 let predictedAges = []
 
+const bombImage = new Image()
+bombImage.src = 'images/bomb.png'
+let bombYPos = -80
+let bombXPos = (videoWidth - 40) * Math.random()
+let prashantId
+let timeoutId
+
 function interpolateAgePredictions(age) {
   predictedAges = [age].concat(predictedAges).slice(0, 30)
   const avgPredictedAge = predictedAges.reduce((total, a) => total + a) / predictedAges.length
@@ -55,6 +62,28 @@ function _calculateAngle(p1, p2) {
   return Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
 }
 
+function drawBombFalling() {
+  if (bombYPos > videoHeight) {
+    bombYPos = -80
+    bombXPos = (videoWidth - 40) * Math.random()
+  } else {
+    bombYPos += 1
+  }
+}
+
+function shapesColliding(r1x, r1y, r1w, r1h, r2x, r2y, r2w, r2h) {
+
+ // are the sides of one rectangle touching the other?
+
+ if (r1x + r1w >= r2x &&    // r1 right edge past r2 left
+     r1x <= r2x + r2w &&    // r1 left edge past r2 right
+     r1y + r1h >= r2y &&    // r1 top edge past r2 bottom
+     r1y <= r2y + r2h) {    // r1 bottom edge past r2 top
+       return true;
+ }
+ return false;
+}
+
 function detectFaceInRealTime(video, net, task) {
   const canvas = document.getElementById('output');
   const ctx = canvas.getContext('2d');
@@ -63,6 +92,8 @@ function detectFaceInRealTime(video, net, task) {
   canvas.height = videoHeight;
   minConfidence = 0.5
   options = new faceapi.SsdMobilenetv1Options({ minConfidence })
+
+  setInterval(drawBombFalling, 10)
 
   async function poseDetectionFrame() {
     let minPoseConfidence;
@@ -95,7 +126,14 @@ function detectFaceInRealTime(video, net, task) {
           // console.log(angle)
           const { top, left, height, width } = resizedResultExpressions[i].detection.box
           const image = new Image()
-          image.src = `images/${expression}.png`
+          if (prashantId !== i) {
+            image.src = `images/${expression}.png`
+            if (timeoutId) {
+              clearTimeout(timeoutId)
+            }
+          } else {
+            image.src = `images/prashant.png`
+          }
           const x = left + width/2
           const y = top + height/2
           ctx.save()
@@ -104,6 +142,21 @@ function detectFaceInRealTime(video, net, task) {
           ctx.translate(-x,-y)
           ctx.drawImage(image, left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2)
           ctx.restore()
+
+          ctx.drawImage(bombImage, bombXPos, bombYPos, 80, 80)
+
+          if (shapesColliding(
+            left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2,
+            bombXPos, bombYPos, 80, 80
+          )) {
+            bombYPos = -400
+            prashantId = i
+            const audio = new Audio('images/explosion.wav')
+            audio.play()
+            timeoutId = setTimeout(() => {
+              prashantId = null
+            }, 1500)
+          }
        }
         
       }
