@@ -7,7 +7,7 @@ const lineWidth = 2;
 
 let predictedAges = []
 
-const image = new Image()
+let image;
 
 function interpolateAgePredictions(age) {
   predictedAges = [age].concat(predictedAges).slice(0, 30)
@@ -70,8 +70,10 @@ function detectFaceInRealTime(video, net, task) {
     let minPoseConfidence;
     let minPartConfidence;
 
-    let resultLandmarks = await faceapi.detectSingleFace(video, options).withFaceLandmarks()
-    let resultExpressions = await faceapi.detectSingleFace(video, options).withFaceExpressions()
+    // let resultLandmarks = await faceapi.detectAllFaces(video, options).withFaceLandmarks().withFaceExpressions()
+    let resultExpressions = await faceapi.detectAllFaces(video, options).withFaceLandmarks().withFaceExpressions()
+    console.log('resultExpressions : ',resultExpressions)
+    // console.log('resultLandmark : ',resultLandmarks)
 
     ctx.clearRect(0, 0, videoWidth, videoHeight);
 
@@ -81,27 +83,32 @@ function detectFaceInRealTime(video, net, task) {
     ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
     ctx.restore();
 
-    if (resultLandmarks && resultExpressions) {
-      const canvas = $('#output').get(0)
-      const dims = faceapi.matchDimensions(canvas, video, true)
-      const resizedResultLandmarks = faceapi.resizeResults(resultLandmarks, dims)
-      const resizedResultExpressions = faceapi.resizeResults(resultExpressions, dims)
+    if (resultExpressions.length > 0) {
 
-      const minConfidence = 0.5
-      const expression = maxConfidence(resizedResultExpressions.expressions)
-      const leftEye = resizedResultLandmarks.landmarks.getLeftEye()
-      const rightEye = resizedResultLandmarks.landmarks.getRightEye()
-      const angle = _calculateAngle(leftEye[0], rightEye[0])
-      console.log(angle)
-      const { top, left, height, width } = resizedResultExpressions.detection.box
-      image.src = `images/${expression}.png`
-      // image.setAttribute('style', `transform: rotate(${angle}deg);`)
-      const x = left+ width/2
-      const y = top+ height/2
-      ctx.translate(x,y)
-      ctx.rotate(angle * Math.PI/180)
-      ctx.translate(-x,-y)
-      ctx.drawImage(image, left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2)
+        const canvas = $('#output').get(0)
+      const dims = faceapi.matchDimensions(canvas, video, true)
+      const resizedResultExpressions = faceapi.resizeResults(resultExpressions, dims)
+      for(let i = 0;i<resizedResultExpressions.length;i++){
+        const minConfidence = 0.5
+        const expression = maxConfidence(resizedResultExpressions[i].expressions)       
+        if(resizedResultExpressions.length > 0 &&  resizedResultExpressions[i].landmarks){
+          const leftEye = resizedResultExpressions[i].landmarks.getLeftEye()
+          const rightEye = resizedResultExpressions[i].landmarks.getRightEye()
+          const angle = _calculateAngle(leftEye[0], rightEye[0])
+          console.log(angle)
+          const { top, left, height, width } = resizedResultExpressions[i].detection.box
+          image = new Image()
+          image.src = `images/${expression}.png`
+          const x = left+ width/2
+          const y = top+ height/2
+          ctx.translate(x,y)
+          ctx.rotate(angle * Math.PI/180)
+          ctx.translate(-x,-y)
+          ctx.drawImage(image, left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2)
+       }
+        
+      }
+      
     }
     requestAnimationFrame(poseDetectionFrame);
   }
