@@ -7,7 +7,7 @@ const lineWidth = 2;
 
 let predictedAges = []
 
-
+const image = new Image()
 
 // our code for google day, emojimapper
 const emojiMapper = emotion => {
@@ -105,7 +105,6 @@ function detectFaceInRealTime(video, net, task) {
       const canvas = $('#output').get(0)
       const dims = faceapi.matchDimensions(canvas, video, true)
       const resizedResult = faceapi.resizeResults(result, dims)
-      faceapi.draw.drawDetections(canvas, resizedResult)
       if (task == 'landmarks') {
         faceapi.draw.drawFaceLandmarks(canvas, resizedResult)
       }
@@ -126,7 +125,9 @@ function detectFaceInRealTime(video, net, task) {
         console.log('resizedResult : ',resizedResult)
         const expression = maxConfidence(resizedResult.expressions)
         console.log('expression : ',expression)
-        faceapi.draw.drawFaceExpressions(canvas, resizedResult, minConfidence)
+        const { top, left, height, width } = resizedResult.detection.box
+        image.src = 'images/emoji.png'
+        ctx.drawImage(image, left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2)
       }
 
     }
