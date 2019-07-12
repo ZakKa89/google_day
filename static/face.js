@@ -8,24 +8,6 @@ const lineWidth = 2;
 let predictedAges = []
 
 const image = new Image()
-
-// our code for google day, emojimapper
-const emojiMapper = emotion => {
-
-  const emojis = {
-    happy: 😃,
-    sad: 😔,
-    disgusted: 🤢,
-    fearful: 😨,
-    neutral: 😐,
-    angry: 😠,
-    surprised: 😮
-  }
-
-  return emojis[emotion] ? emojis[emotion] : emojis[neutral]
-}
-//
-
 function interpolateAgePredictions(age) {
   predictedAges = [age].concat(predictedAges).slice(0, 30)
   const avgPredictedAge = predictedAges.reduce((total, a) => total + a) / predictedAges.length
@@ -152,7 +134,7 @@ maxConfidence = (expressions) => {
     return (Math.abs(curr.value - target) < Math.abs(prev.value - target) ? curr : prev);
   });
 
-  return closestTarget
+  return closestTarget.key
 }
 
 async function start(task) {
