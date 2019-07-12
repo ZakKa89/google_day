@@ -22,8 +22,7 @@ const emojiMapper = emotion => {
     surprised: 😮
   }
 
-  return emojis[emotion] | emojis[neutral]
-
+  return emojis[emotion] ? emojis[emotion] : emojis[neutral]
 }
 //
 
