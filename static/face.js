@@ -103,7 +103,10 @@ function detectFaceInRealTime(video, net, task) {
         ).draw(canvas)
       }
       if (task == 'expression') {
-        const minConfidence = 0.05
+        const minConfidence = 0.5
+        console.log('resizedResult : ',resizedResult)
+        const expression = maxConfidence(resizedResult.expressions)
+        console.log('expression : ',expression)
         faceapi.draw.drawFaceExpressions(canvas, resizedResult, minConfidence)
       }
 
@@ -114,6 +117,22 @@ function detectFaceInRealTime(video, net, task) {
     requestAnimationFrame(poseDetectionFrame);
   }
   poseDetectionFrame();
+}
+
+maxConfidence = (expressions) => {
+  const target = 1
+  let expressionArray = []
+  Object.keys(expressions).map((key)=>{
+    expressionArray.push({
+      key,
+      value : expressions[key]
+    })
+  });
+  const closestTarget = expressionArray.reduce(function(prev, curr) {
+    return (Math.abs(curr.value - target) < Math.abs(prev.value - target) ? curr : prev);
+  });
+
+  return closestTarget
 }
 
 async function start(task) {
