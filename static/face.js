@@ -97,7 +97,6 @@ function detectFaceInRealTime(video, net, task) {
       image.src = `images/${expression}.png`
       // image.setAttribute('style', `transform: rotate(${angle}deg);`)
       ctx.drawImage(image, left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2)
-
     }
     requestAnimationFrame(poseDetectionFrame);
   }
