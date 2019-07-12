@@ -128,8 +128,9 @@ function detectFaceInRealTime(video, net, task) {
           const image = new Image()
           if (prashantId !== i) {
             image.src = `images/${expression}.png`
-            if (timeoutId) {
+            if (timeoutId && !prashantId) {
               clearTimeout(timeoutId)
+              timeoutId = null
             }
           } else {
             image.src = `images/prashant.png`
@@ -153,9 +154,12 @@ function detectFaceInRealTime(video, net, task) {
             prashantId = i
             const audio = new Audio('images/explosion.wav')
             audio.play()
-            timeoutId = setTimeout(() => {
-              prashantId = null
-            }, 1500)
+            if (!timeoutId) {
+              timeoutId = setTimeout(() => {
+                prashantId = null
+                bombYPos = 10000
+              }, 1500)
+            }
           }
        }
         
