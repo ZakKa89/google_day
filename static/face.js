@@ -7,8 +7,6 @@ const lineWidth = 2;
 
 let predictedAges = []
 
-let image;
-
 function interpolateAgePredictions(age) {
   predictedAges = [age].concat(predictedAges).slice(0, 30)
   const avgPredictedAge = predictedAges.reduce((total, a) => total + a) / predictedAges.length
@@ -72,7 +70,7 @@ function detectFaceInRealTime(video, net, task) {
 
     // let resultLandmarks = await faceapi.detectAllFaces(video, options).withFaceLandmarks().withFaceExpressions()
     let resultExpressions = await faceapi.detectAllFaces(video, options).withFaceLandmarks().withFaceExpressions()
-    console.log('resultExpressions : ',resultExpressions)
+    // console.log('resultExpressions : ',resultExpressions)
     // console.log('resultLandmark : ',resultLandmarks)
 
     ctx.clearRect(0, 0, videoWidth, videoHeight);
@@ -84,8 +82,7 @@ function detectFaceInRealTime(video, net, task) {
     ctx.restore();
 
     if (resultExpressions.length > 0) {
-
-        const canvas = $('#output').get(0)
+      const canvas = $('#output').get(0)
       const dims = faceapi.matchDimensions(canvas, video, true)
       const resizedResultExpressions = faceapi.resizeResults(resultExpressions, dims)
       for(let i = 0;i<resizedResultExpressions.length;i++){
@@ -95,16 +92,18 @@ function detectFaceInRealTime(video, net, task) {
           const leftEye = resizedResultExpressions[i].landmarks.getLeftEye()
           const rightEye = resizedResultExpressions[i].landmarks.getRightEye()
           const angle = _calculateAngle(leftEye[0], rightEye[0])
-          console.log(angle)
+          // console.log(angle)
           const { top, left, height, width } = resizedResultExpressions[i].detection.box
-          image = new Image()
+          const image = new Image()
           image.src = `images/${expression}.png`
-          const x = left+ width/2
-          const y = top+ height/2
+          const x = left + width/2
+          const y = top + height/2
+          ctx.save()
           ctx.translate(x,y)
           ctx.rotate(angle * Math.PI/180)
           ctx.translate(-x,-y)
           ctx.drawImage(image, left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2)
+          ctx.restore()
        }
         
       }
