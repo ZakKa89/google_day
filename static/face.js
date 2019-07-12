@@ -9,23 +9,6 @@ let predictedAges = []
 
 const image = new Image()
 
-// our code for google day, emojimapper
-const emojiMapper = emotion => {
-
-  const emojis = {
-    happy: '😃',
-    sad: '😔',
-    disgusted: '🤢',
-    fearful: '😨',
-    neutral: '😐',
-    angry: '😠',
-    surprised: '😮'
-  }
-
-  return emojis[emotion] ? emojis[emotion] : emojis[neutral]
-}
-//
-
 function interpolateAgePredictions(age) {
   predictedAges = [age].concat(predictedAges).slice(0, 30)
   const avgPredictedAge = predictedAges.reduce((total, a) => total + a) / predictedAges.length
@@ -87,15 +70,8 @@ function detectFaceInRealTime(video, net, task) {
     let minPoseConfidence;
     let minPartConfidence;
 
-    let result;
-    if (task == 'landmarks')
-      result = await faceapi.detectSingleFace(video, options).withFaceLandmarks()
-    else if (task == 'age_gender')
-      result = await faceapi.detectSingleFace(video, options).withAgeAndGender()
-    else if (task == 'expression')
-      result = await faceapi.detectSingleFace(video, options).withFaceExpressions()
-    else
-      result = await faceapi.detectSingleFace(video, options)
+    let resultLandmarks = await faceapi.detectSingleFace(video, options).withFaceLandmarks()
+    let resultExpressions = await faceapi.detectSingleFace(video, options).withFaceExpressions()
 
     ctx.clearRect(0, 0, videoWidth, videoHeight);
 
@@ -105,44 +81,24 @@ function detectFaceInRealTime(video, net, task) {
     ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
     ctx.restore();
 
-    if (result) {
+    if (resultLandmarks && resultExpressions) {
       const canvas = $('#output').get(0)
       const dims = faceapi.matchDimensions(canvas, video, true)
-      const resizedResult = faceapi.resizeResults(result, dims)
-      // faceapi.draw.drawDetections(canvas, resizedResult)
-      if (task == 'landmarks') {
-        faceapi.draw.drawFaceLandmarks(canvas, resizedResult)
-      }
-      if (task == 'age_gender') {
-        const { age, gender, genderProbability } = resizedResult
-        const interpolatedAge = interpolateAgePredictions(age)
+      const resizedResultLandmarks = faceapi.resizeResults(resultLandmarks, dims)
+      const resizedResultExpressions = faceapi.resizeResults(resultExpressions, dims)
 
-        new faceapi.draw.DrawTextField(
-          [
-            `${faceapi.round(interpolatedAge, 0)} years`,
-            `${gender} (${faceapi.round(genderProbability)})`
-          ],
-          result.detection.box.bottomLeft
-        ).draw(canvas)
-      }
-      if (task == 'expression') {
-        const minConfidence = 0.5
-        // console.log('resizedResult : ',resizedResult)
-        const expression = maxConfidence(resizedResult.expressions)
-        // console.log('expression : ',expression)
-        // faceapi.draw.drawFaceExpressions(canvas, resizedResult, minConfidence)
-        const leftEye = resizedResult.landmarks.getLeftEye()
-        const rightEye = resizedResult.landmarks.getRightEye()
-        const angle = _calculateAngle(leftEye[0], rightEye[0])
-        const { top, left, height, width } = resizedResult.detection.box
-        image.src = 'images/emoji.png'
-        ctx.drawImage(image, left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2)
-      }
+      const minConfidence = 0.5
+      const expression = maxConfidence(resizedResultExpressions.expressions)
+      const leftEye = resizedResultLandmarks.landmarks.getLeftEye()
+      const rightEye = resizedResultLandmarks.landmarks.getRightEye()
+      const angle = _calculateAngle(leftEye[0], rightEye[0])
+      console.log(angle)
+      const { top, left, height, width } = resizedResultExpressions.detection.box
+      image.src = `images/${expression}.png`
+      // image.setAttribute('style', `transform: rotate(${angle}deg);`)
+      ctx.drawImage(image, left - (height*1.2 - width)/2, top - height*0.1, height*1.2, height*1.2)
 
     }
-
-    // setTimeout(() => onPlay())
-
     requestAnimationFrame(poseDetectionFrame);
   }
   poseDetectionFrame();
@@ -161,7 +117,7 @@ maxConfidence = (expressions) => {
     return (Math.abs(curr.value - target) < Math.abs(prev.value - target) ? curr : prev);
   });
 
-  return closestTarget
+  return closestTarget.key
 }
 
 async function start(task) {
@@ -169,12 +125,8 @@ async function start(task) {
     // const net = await faceapi.nets.tinyFaceDetector
     // const net = await faceapi.nets.mtcnn
     .load('/weights')
-  if (task == 'landmarks')
-    await faceapi.loadFaceLandmarkModel('/weights')
-  else if (task == 'age_gender')
-    await faceapi.nets.ageGenderNet.load('/weights')
-  else if (task == 'expression')
-    await faceapi.loadFaceExpressionModel('/weights')
+  await faceapi.loadFaceLandmarkModel('/weights')
+  await faceapi.loadFaceExpressionModel('/weights')
 
   let video;
 
